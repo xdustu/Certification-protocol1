@@ -1,1 +1,71 @@
+hashfunction H;
+const XOR: Function;
+const PUF: Function;
 
+macro RMi = PUF(Ci)
+macro Ki= H(IDi,MSK);
+macro Kg = H(IDg,MSK);
+macro S1 = XOR(IDi,r1);
+macro S2 = H(IDi,IDg,Ki,r1);
+macro G1 = XOR(Kg,r2);
+macro G2 = H(IDg,Kg,r2);
+macro r1' = XOR(IDi,S1);
+macro S2star = H(IDi,lDg,Ki,r1');
+macro r2' = XOR (IDg,Kg,r2');
+macro G2star = H(IDg,Kg,r2');
+macro SK = H(IDg,r1,r2,r3);
+macro E3 = H(IDg,Kg,r2',SK);
+macro E4 = H(IDi,Ki,r1',RMi,SK);
+macro E3star = H(IDg,Kg,r2,SK);
+macro E4star = H(lDi,Ki,r1,PUF(Ci),SK);
+
+protocol SG1(SN,GWN,CC){
+role SN{
+var r2,r3:Nonce;
+fresh r1:Nonce;
+const Ci,RMi,IDi,IDg,MSK,r2':Ticket;
+send_1(SN,GWN,S1,S2,Ci);
+recv_4(GWN,SN,E4);
+match(E4,E4star);
+
+claim¬_A1(SN,Secret,SK);
+claim_A2(SN,Alive);
+claim_A3(SN,Niagree);
+claim_A4(SN,Nisynch);
+claim_S1(SN,Secret,Ki);
+}
+role GWN{
+var r1,r3:Nonce;
+fresh r2:Nonce;
+const Ci,RMi,IDi,IDg,MSK,r2':Ticket;
+recv_1(SN,GWN,S1,S2,Ci);
+send_2(GWN,CC,S1,S2,Ci,lDg,G1,G2);
+recv_3(CC,GWN,E3,E4);
+match(E3,E3star);
+send_4(GWN,SN,E4);
+
+claim_A5(GWN,Secret,SK);
+claim_A6(GWN,Alive);
+claim_A7(GWN,Niagree);
+claim_A8(GWN,Nisynch);
+claim_S2(GWN,Secret,Kg);
+}
+role CC{
+var r1,r2:Nonce;
+fresh r3:Nonce;
+const Ci,RMi,IDi,IDg,MSK,r2':Ticket;
+recv_2(GWN,CC,S1,S2,Ci,IDg,G1,G2);
+match(S2,S2star);
+match(G2,G2star);
+send_3(CC,GWN,E3,E4);
+
+claim_A9(CC,Secret,SK);
+claim_A10(CC,Alive);
+claim_A11(CC,Niagree);
+claim_A12(CC,Nisynch);
+claim_S3(CC,Secret,Ci);
+claim_S4(CC,Secret,RMi);
+claim_S2(CC,Secret,Kg);
+claim_S1(CC,Secret,Ki);
+}
+}
